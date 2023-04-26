@@ -29,17 +29,34 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
                 if (! config('snooze.disabled')) {
                     $frequency = config('snooze.sendFrequency', 'everyMinute');
                     if (config('snooze.onOneServer', false)) {
-                        $schedule->command('tenants:run snooze:send')->{$frequency}()->onOneServer();
+                        if (config('snooze.runsInMultiTenancy')) {
+                            $schedule->command('tenants:run snooze:send')->{$frequency}()->onOneServer();
+                        } else {
+                            $schedule->command('snooze:send')->{$frequency}()->onOneServer();
+                        }
                     } else {
-                        $schedule->command('tenants:run snooze:send')->{$frequency}();
+                        if (config('snooze.runsInMultiTenancy')) {
+                            $schedule->command('tenants:run snooze:send')->{$frequency}();
+                        } else {
+                            $schedule->command('snooze:send')->{$frequency}();
+                        }
                     }
                 }
 
                 if (config('snooze.pruneAge') !== null) {
                     if (config('snooze.onOneServer', false)) {
-                        $schedule->command('tenants:run snooze:prune')->daily()->onOneServer();
+                        if (config('snooze.runsInMultiTenancy')) {
+                            $schedule->command('tenants:run snooze:prune')->daily()->onOneServer();
+
+                        } else {
+                            $schedule->command('snooze:prune')->daily()->onOneServer();
+                        }
                     } else {
-                        $schedule->command('tenants:run snooze:prune')->daily();
+                        if (config('snooze.runsInMultiTenancy')) {
+                            $schedule->command('tenants:run snooze:prune')->daily();
+                        } else {
+                            $schedule->command('snooze:prune')->daily();
+                        }
                     }
                 }
             });
