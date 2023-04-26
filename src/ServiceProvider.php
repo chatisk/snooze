@@ -7,6 +7,7 @@ use Illuminate\Console\Scheduling\Schedule;
 class ServiceProvider extends \Illuminate\Support\ServiceProvider
 {
     const CONFIG_PATH = __DIR__.'/../config/snooze.php';
+    const MIGRATIONS_PATH = __DIR__.'/../migrations/';
 
     protected $commands = [
         Console\Commands\SendScheduledNotifications::class,
@@ -28,17 +29,17 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
                 if (! config('snooze.disabled')) {
                     $frequency = config('snooze.sendFrequency', 'everyMinute');
                     if (config('snooze.onOneServer', false)) {
-                        $schedule->command('snooze:send')->{$frequency}()->onOneServer();
+                        $schedule->command('tenants:run snooze:send')->{$frequency}()->onOneServer();
                     } else {
-                        $schedule->command('snooze:send')->{$frequency}();
+                        $schedule->command('tenants:run snooze:send')->{$frequency}();
                     }
                 }
 
                 if (config('snooze.pruneAge') !== null) {
                     if (config('snooze.onOneServer', false)) {
-                        $schedule->command('snooze:prune')->daily()->onOneServer();
+                        $schedule->command('tenants:run snooze:prune')->daily()->onOneServer();
                     } else {
-                        $schedule->command('snooze:prune')->daily();
+                        $schedule->command('tenants:run snooze:prune')->daily();
                     }
                 }
             });
@@ -47,6 +48,10 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
         $this->publishes([
             self::CONFIG_PATH => config_path('snooze.php'),
         ], 'config');
+
+        $this->publishes([
+            self::MIGRATIONS_PATH => database_path('tenants'),
+        ], 'migrations-multitenancy');
 
         $this->loadMigrationsFrom(__DIR__.'/../migrations');
 
